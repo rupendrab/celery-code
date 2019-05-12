@@ -1,0 +1,51 @@
+version: "3.7"
+
+services:
+
+  rabbit:
+    shm_size: '2gb'
+    image: rabbitmq:3.7-management
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_VHOST: rab1
+      RABBITMQ_DEFAULT_USER: rupen
+      RABBITMQ_DEFAULT_PASS: secret
+    ports:
+      - 4369:4369
+      - 5671:5671
+      - 5672:5672
+      - 15671:15671
+      - 15672:15672
+
+  postgres:
+    image: postgres:11.2-alpine
+    shm_size: '2gb'
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: example
+    ports:
+      - 5432:5432
+
+  celery-worker:
+    build: 
+      context: ./celery_docker
+      shm_size: '2gb'
+    shm_size: '2gb'
+    image: my-celery
+    depends_on:
+      - rabbit
+      - postgres
+    deploy:
+      mode: replicated
+      replicas: 3
+    restart: always
+    environment:
+      POSTGRES_IP: ${postgres_ip}
+      RABBIT_IP: ${rabbit_ip}
+
+volumes:
+  postgres_data:
